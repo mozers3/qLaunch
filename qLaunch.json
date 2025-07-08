@@ -1,0 +1,126 @@
+﻿{
+    "items":  [
+                  {
+                      "Caption":  "All Applications",
+                      "Icon":  "shell32.dll,43",
+                      "Arguments":  "shell:appsFolder",
+                      "Target":  "explorer"
+                  },
+                  {
+                      "Caption":  "File Explorer",
+                      "Target":  "explorer"
+                  },
+                  {
+                      "Target":  "%ProgramFiles(x86)%\\Microsoft\\Edge\\Application\\msedge.exe",
+                      "Caption":  "Microsoft Edge"
+                  },
+                  {
+                      "type":  "separator"
+                  },
+                  {
+                      "Target":  "write.exe",
+                      "Caption":  "WordPad"
+                  },
+                  {
+                      "Target":  "notepad",
+                      "Caption":  "Notepad"
+                  },
+                  {
+                      "type":  "separator"
+                  },
+                  {
+                      "Caption":  "Control",
+                      "items":  [
+                                    {
+                                        "Caption":  "Windows Settings",
+                                        "Icon":  "imageres.dll,109",
+                                        "Arguments":  "ms-settings:",
+                                        "Target":  "explorer"
+                                    },
+                                    {
+                                        "Caption":  "Computer Management",
+                                        "Icon":  "Mycomput.dll,2",
+                                        "Arguments":  "/s",
+                                        "Target":  "compmgmt.msc",
+                                        "WorkingDirectory":  "%HOMEDRIVE%%HOMEPATH%"
+                                    },
+                                    {
+                                        "Target":  "msconfig.exe",
+                                        "Caption":  "System Configuration"
+                                    },
+                                    {
+                                        "Target":  "sysdm.cpl",
+                                        "Caption":  "System"
+                                    },
+                                    {
+                                        "Target":  "appwiz.cpl",
+                                        "Caption":  "Application Wizard"
+                                    },
+                                    {
+                                        "Target":  "ncpa.cpl",
+                                        "Caption":  "Network Connections"
+                                    },
+                                    {
+                                        "Arguments":  "keymgr.dll,KRShowKeyMgr",
+                                        "Icon":  "shell32.dll,104",
+                                        "Caption":  "Saved Passwords",
+                                        "Target":  "rundll32.exe"
+                                    },
+                                    {
+                                        "Icon":  "shell32.dll,21",
+                                        "Arguments":  "shell:::{ED7BA470-8E54-465E-825C-99712043E01C}",
+                                        "Caption":  "Good Mode",
+                                        "Target":  "explorer.exe"
+                                    }
+                                ]
+                  },
+                  {
+                      "Caption":  "Run",
+                      "items":  [
+                                    {
+                                        "Icon":  "shell32.dll,24",
+                                        "Arguments":  "shell32.dll,#61",
+                                        "Caption":  "Run...",
+                                        "Target":  "rundll32.exe",
+                                        "RunAsAdmin":  "1"
+                                    },
+                                    {
+                                        "Caption":  "Command Prompt (Admin)",
+                                        "Target":  "cmd.exe",
+                                        "RunAsAdmin":  "1"
+                                    },
+                                    {
+                                        "Caption":  "PowerShell (Admin)",
+                                        "Arguments":  "-NoLogo -NoExit -Sta",
+                                        "Target":  "powershell",
+                                        "RunAsAdmin":  "1"
+                                    }
+                                ]
+                  },
+                  {
+                      "type":  "separator"
+                  },
+                  {
+                      "Caption":  "Window Switcher",
+                      "Icon":  "explorer.exe,-258",
+                      "Arguments":  "shell:::{3080F90E-D7AD-11D9-BD98-0000947B0257}",
+                      "Target":  "explorer.exe"
+                  },
+                  {
+                      "Icon":  "explorer.exe,3",
+                      "Arguments":  "shell:::{3080F90D-D7AD-11D9-BD98-0000947B0257}",
+                      "Caption":  "Show Desktop",
+                      "Target":  "explorer.exe"
+                  },
+                  {
+                      "type":  "separator"
+                  },
+                  {
+                      "Caption":  "Windows Shutdown",
+                      "Icon":  "shell32.dll,27",
+                      "Arguments":  "-WindowStyle Hidden -Command Stop-Computer",
+                      "Target":  "powershell",
+                      "WindowStyle":  "Hidden"
+                  }
+              ]
+}
