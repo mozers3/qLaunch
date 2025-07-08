@@ -21,13 +21,15 @@ Another variant to create a Quick Launch Toolbar in Windows 11
     * Modify/delete existing items
     * Insert new items or separators above selection
 4. To bulk add items from system folders (**Quick Launch**, **Start Menu\Programs**) or any custom folder, run in CMD:
+
 ![cmd](https://github.com/mozers3/qLaunch/wiki/images/cmd.png)
-5. Add any file to the menu by right-clicking it, selecting "Send to" in the system context menu (_in Windows 11, hold `Shift` to reveal it_), then choosing `ps Quick Launch`.
-6. Full menu customization is available via "Edit Items" option:
+
+6. Add any file to the menu by right-clicking it, selecting "Send to" in the system context menu (_in Windows 11, hold `Shift` to reveal it_), then choosing `ps Quick Launch`.
+7. Full menu customization is available via "Edit Items" option:
     * If user-made edits to qLaunch.json contain errors, the program automatically restores the last working version
     * To validate JSON syntax after manual editing, use [JSONLint](https://jsonlint.com)
-7. Change the hotkey combo (default: `Ctrl+Alt+Q`) by modifying the registry value `HotKeys` at: `HKEY_CURRENT_USER\Software\qLaunch`
-8. Hold `Shift` while clicking a menu item to run it as Administrator (**Elevated Mode**).
+8. Change the hotkey combo (default: `Ctrl+Alt+Q`) by modifying the registry value `HotKeys` at: `HKEY_CURRENT_USER\Software\qLaunch`
+9. Hold `Shift` while clicking a menu item to run it as Administrator (**Elevated Mode**).
 
 ### Acknowledgments:
 * Special thanks to [chrizonix](https://github.com/chrizonix/QuickLaunch) for the idea and implementation, which almost met my needs.
