@@ -1,6 +1,7 @@
 ## ps Quick Launch
-
 Another variant to create a Quick Launch Toolbar in Windows 11
+
+![main](https://github.com/user-attachments/assets/d98306d5-c33f-4e9b-891f-65c184bf56ef)
 
 ### Features:
 * Works on modern Windows versions (tested on Windows 10/11)
@@ -19,16 +20,14 @@ Another variant to create a Quick Launch Toolbar in Windows 11
 2. Right-click menu items to:
     * Modify/delete existing items
     * Insert new items or separators above selection
-3. To bulk add items from system folders (**Quick Launch**, **Start Menu\Programs**) or any custom folder, run in CMD:
-```
-powershell .\make_JSON.ps1
-```
-4. Add any file to the menu by right-clicking it, selecting "Send to" in the system context menu (_in Windows 11, hold `Shift` to reveal it_), then choosing `ps Quick Launch`.
-5. Full menu customization is available via "Edit Items" option:
+4. To bulk add items from system folders (**Quick Launch**, **Start Menu\Programs**) or any custom folder, run in CMD:
+![cmd](https://github.com/user-attachments/assets/8ebd56aa-741d-43a3-b6c0-089eb53985a2)
+5. Add any file to the menu by right-clicking it, selecting "Send to" in the system context menu (_in Windows 11, hold `Shift` to reveal it_), then choosing `ps Quick Launch`.
+6. Full menu customization is available via "Edit Items" option:
     * If user-made edits to qLaunch.json contain errors, the program automatically restores the last working version
     * To validate JSON syntax after manual editing, use [JSONLint](https://jsonlint.com)
-6. Change the hotkey combo (default: `Ctrl+Alt+Q`) by modifying the registry value `HotKeys` at: `HKEY_CURRENT_USER\Software\qLaunch`
-7. Hold `Shift` while clicking a menu item to run it as Administrator (**Elevated Mode**).
+7. Change the hotkey combo (default: `Ctrl+Alt+Q`) by modifying the registry value `HotKeys` at: `HKEY_CURRENT_USER\Software\qLaunch`
+8. Hold `Shift` while clicking a menu item to run it as Administrator (**Elevated Mode**).
 
 ### Acknowledgments:
 * Special thanks to [chrizonix](https://github.com/chrizonix/QuickLaunch) for the idea and implementation, which almost met my needs.
