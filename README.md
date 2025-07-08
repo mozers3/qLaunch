@@ -1,7 +1,7 @@
 ## ps Quick Launch
 Another variant to create a Quick Launch Toolbar in Windows 11
 
-![main](https://github.com/user-attachments/assets/d98306d5-c33f-4e9b-891f-65c184bf56ef)
+![main](https://github.com/mozers3/qLaunch/wiki/images/main.png)
 
 ### Features:
 * Works on modern Windows versions (tested on Windows 10/11)
@@ -21,7 +21,7 @@ Another variant to create a Quick Launch Toolbar in Windows 11
     * Modify/delete existing items
     * Insert new items or separators above selection
 4. To bulk add items from system folders (**Quick Launch**, **Start Menu\Programs**) or any custom folder, run in CMD:
-![cmd](https://github.com/user-attachments/assets/8ebd56aa-741d-43a3-b6c0-089eb53985a2)
+![cmd](https://github.com/mozers3/qLaunch/wiki/images/cmd.png)
 5. Add any file to the menu by right-clicking it, selecting "Send to" in the system context menu (_in Windows 11, hold `Shift` to reveal it_), then choosing `ps Quick Launch`.
 6. Full menu customization is available via "Edit Items" option:
     * If user-made edits to qLaunch.json contain errors, the program automatically restores the last working version
