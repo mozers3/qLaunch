@@ -714,7 +714,7 @@ function Create-NotifyIconMenu {
 
 function Get-ScriptPath {
 	if ($PSCommandPath) {
-		Write-Warning "All program features are available only in the EXE version.`n`nTo compile, please run:`n  .\$(Split-Path $PSCommandPath -Leaf) COMPILE`n"
+		Write-Warning "All program features are available only in the EXE version.`n`nTo compile, please run:`n  .\$(Split-Path $PSCommandPath -Leaf) COMPILE`n`n"
 		return $PSScriptRoot
 	} else {
 		$exePath = [System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
@@ -742,7 +742,7 @@ function Compile-Script {
 	$stream = [System.IO.File]::Create($iconPath)
 	$appIcon.Save($stream)
 	$stream.Close()
-	$version = '1.0.0'
+	$version = '1.1.0'
 	Invoke-PS2EXE -InputFile $PSCommandPath -x64 -noConsole -verbose -IconFile $iconPath -Title $appName -Product $appName -Copyright 'https://github.com/mozers3/qLaunch' -Company 'mozers™' -Version $version
 	Remove-Item $iconPath -Force -ErrorAction SilentlyContinue
 }
