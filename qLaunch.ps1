@@ -1,5 +1,5 @@
 ﻿param (
-	[string]$newFilePath
+	[string]$cmdLine
 )
 
 Add-Type -AssemblyName System.Windows.Forms
@@ -389,7 +389,7 @@ function Show-Form {
 	$formEditItem.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
 	$formEditItem.MaximizeBox = $false
 	$formEditItem.MinimizeBox = $false
-	$formEditItem.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon("$env:windir\system32\mscandui.dll")
+	$formEditItem.Icon = $appIcon
 	$formEditItem.ClientSize = New-Object System.Drawing.Size(632, 226)
 
 	Add-Label -Text "Caption:" -Location @(14, 18)
@@ -653,12 +653,7 @@ function Create-NotifyIconMenu {
 	Create-Menu
 
 	$notifyIcon = New-Object System.Windows.Forms.NotifyIcon
-	$iconPath = if ($PSCommandPath) { # qLaunch.ps1 is running
-		"$scriptPath\qLaunch.ico"
-	} else { # qLaunch.exe is running
-		[System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
-	}
-	$notifyIcon.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($iconPath)
+	$notifyIcon.Icon = $appIcon
 	$notifyIcon.Text = $appName
 	$notifyIcon.Visible = $true
 	$notifyIcon.ContextMenuStrip = $menu # Right mouse button
@@ -719,7 +714,7 @@ function Create-NotifyIconMenu {
 
 function Get-ScriptPath {
 	if ($PSCommandPath) {
-		Write-Warning "All program features are available only in the EXE version.`n`nTo compile, please run:`n  Invoke-ps2exe qLaunch.ps1"
+		Write-Warning "All program features are available only in the EXE version.`n`nTo compile, please run:`n  .\$(Split-Path $PSCommandPath -Leaf) COMPILE`n"
 		return $PSScriptRoot
 	} else {
 		$exePath = [System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
@@ -727,9 +722,35 @@ function Get-ScriptPath {
 	}
 }
 
+function Initialize-AppIcon {
+    $iconBase64 = "AAABAAEAEBAAAAEAGABoAwAAFgAAACgAAAAQAAAAIAAAAAEAGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABmMzMAAAAAAAAAAAAAAABmMzMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABmMzNmMzMAAAAAAABmMzNmMzMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///9mMzNmMzNmMzNmMzP///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///////9mMzNmMzP///////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABmMzP///////////////9mMzMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABmMzNmMzP///////9mMzNmMzMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///9mMzNmMzNmMzNmMzP///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///////9mMzNmMzP///////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///////////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//6xB//+sQf//rEH736xB+Z+sQfgfrEH4H6xB+B+sQfgfrEH4H6xB+B+sQfw/rEH+f6xB//+sQf//rEH//6xB"
+    $iconBytes = [Convert]::FromBase64String($iconBase64)
+    $stream = [System.IO.MemoryStream]::new($iconBytes)
+    return [System.Drawing.Icon]::new($stream)
+}
+
+function Compile-Script {
+	if (!(Get-Module -ListAvailable -Name ps2exe)) {
+		try {
+			Install-Module -Name ps2exe -Scope CurrentUser -Force -ErrorAction SilentlyContinue
+		} catch {
+			Write-Warning $_
+			return
+		}
+	}
+	$iconPath = "qLaunch.ico"
+	$stream = [System.IO.File]::Create($iconPath)
+	$appIcon.Save($stream)
+	$stream.Close()
+	$version = '1.0.0'
+	Invoke-PS2EXE -InputFile $PSCommandPath -x64 -noConsole -verbose -IconFile $iconPath -Title $appName -Product $appName -Copyright 'https://github.com/mozers3/qLaunch' -Company 'mozers™' -Version $version
+	Remove-Item $iconPath -Force -ErrorAction SilentlyContinue
+}
+
 # -----------------------------------------------------------------------------
 $appName = "ps Quick Launch"
 $jsonFile = "qLaunch.json"
+$appIcon = Initialize-AppIcon
 
 $scriptPath = Get-ScriptPath
 Set-Location -Path $scriptPath
@@ -742,14 +763,16 @@ if (!(Load-jsonFile $jsonFile)) {
 	Exit 1
 }
 
-if ($newFilePath) {
-	if (Test-Path $newFilePath) {
-		$newFile = Get-FileInfo -FilePath $newFilePath
-		if ($newFilePath) {
+if ($cmdLine) {
+	if ($cmdLine.ToUpper() -eq "COMPILE") {
+		Compile-Script
+	} elseif (Test-Path $cmdLine) {
+		$newFile = Get-FileInfo -FilePath $cmdLine
+		if ($newFile) {
 			Show-Form -SourceItem $newFile
 		}
 	} else {
-		[void][System.Windows.Forms.MessageBox]::Show("File '$newFilePath' not exist!", $appName, "OK", "Error")
+		[void][System.Windows.Forms.MessageBox]::Show("File '$cmdLine' not exist!", $appName, "OK", "Error")
 	}
 } else {
 	Create-NotifyIconMenu
