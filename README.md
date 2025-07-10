@@ -11,7 +11,7 @@ Another variant to create a Quick Launch Toolbar in Windows 11
     * Via a dedicated context menu (_right-click any main menu entry_)
     * Via the item "Send to" file's system context menu
 * Automatic menu generation from system folders like **Quick Launch**, **Start Menu\Programs**, or any custom folder
-* Edit any menu item (_right-click on main menu entry_) or the entire menu (via "Edit Items")
+* Edit any menu item (_right-click on main menu entry_) or the entire menu (via "Edit JSON")
 * Ability to add custom commands with parameters (e.g., hidden mode launch)
 * Supports running programs as Administrator (**Elevated Mode**)
 
@@ -25,10 +25,10 @@ Another variant to create a Quick Launch Toolbar in Windows 11
 ![cmd](https://github.com/mozers3/qLaunch/wiki/images/cmd.png)
 
 6. Add any file to the menu by right-clicking it, selecting "Send to" in the system context menu (_in Windows 11, hold `Shift` to reveal it_), then choosing `ps Quick Launch`.
-7. Full menu customization is available via "Edit Items" option:
-    * If user-made edits to qLaunch.json contain errors, the program automatically restores the last working version
+7. Full menu customization is available via "Edit JSON" option:
+    * If user-made edits to `qLaunch.json` contain errors, the program automatically restores the last working version
     * To validate JSON syntax after manual editing, use [JSONLint](https://jsonlint.com)
-8. Change the hotkey combo (default: `Ctrl+Alt+Q`) by modifying the registry value `HotKeys` at: `HKEY_CURRENT_USER\Software\qLaunch`
+8. Hotkey customization: Modify the default `Ctrl+Alt+Q` shortcut by editing the `HotKeys` value in the `Settings` section of `qLaunch.json` (_requires program restart_)
 9. Hold `Shift` while clicking a menu item to run it as Administrator (**Elevated Mode**).
 
 ### Acknowledgments:

@@ -219,8 +219,6 @@ function Run-MenuItem {
 	Start-Process @processParams
 }
 
-function Save-JSON { [PSCustomObject]$objJSON | ConvertTo-Json -Depth 10 | Set-Content -Path $jsonFile -Encoding UTF8 }
-
 function Menu-MouseClick {
 	param ( [object]$menuItem )
 
@@ -244,13 +242,11 @@ function Menu-MouseClick {
 		}
 		$actionMenu.Items[3].ForeColor = "Red"
 		$actionMenu.Items[3].Add_Click{ # Delete
-			$objJSON = Update-Collection -Collection $objJSON -FindItem $this.Tag.Tag -NewItem $null
-			Save-JSON
+			Update-Collection -Collection $objJSON -FindItem $this.Tag.Tag -NewItem $null
 		}
 		$actionMenu.Items[4].Add_Click{ # Add separator
 			$separator = [PSCustomObject]@{type = "separator"}
-			$objJSON = Update-Collection -Collection $objJSON -FindItem $this.Tag.Tag -NewItem $separator
-			Save-JSON
+			Update-Collection -Collection $objJSON -FindItem $this.Tag.Tag -NewItem $separator
 		}
 		$actionMenu.Items[5].Add_Click{ # Add file
 			$fileDialog = New-Object System.Windows.Forms.OpenFileDialog
@@ -305,7 +301,7 @@ function Create-Menu {
 	Copy-Item $jsonFile -Destination "$jsonFile.bak"
 
 	$menu.Items.Clear()
-	[void]$menu.Items.Add("Edit Items", $null, { Start-Process notepad.exe -Args $jsonFile })
+	[void]$menu.Items.Add("Edit JSON", $null, { Start-Process notepad.exe -Args $jsonFile })
 	[void]$menu.Items.Add("-")
 	Create-MenuItems -parent $menu.Items -items $objJSON.items
 	[void]$menu.Items.Add("-")
@@ -324,33 +320,52 @@ function Update-Collection {
 		[switch]$replace
 	)
 
-	$compare = { param($a, $b) ($a | ConvertTo-Json) -eq ($b | ConvertTo-Json) }
+	function Update-CollectionItems {
+		param(
+			[object]$collection,
+			[object]$findItem,
+			[object]$newItem,
+			[switch]$replace
+		)
 
-	if ($newItem -and !$findItem) {
-		$collection.items = @($newItem) + $collection.items
-		return $collection
-	}
+		$compare = { param($a, $b) ($a | ConvertTo-Json) -eq ($b | ConvertTo-Json) }
 
-	$newCollection = [PSCustomObject]@{ items = @() }
-	foreach ($item in $collection.items) {
-		if ($item.items) {
-			$newCollection.items += [PSCustomObject]@{
-				Caption = $item.Caption
-				items   = (Update-Collection -Collection $item -FindItem $findItem -NewItem $newItem -Replace:$replace).items
-			}
-		} else {
- 			if ($findItem) {
-				if (& $compare $findItem $item) {
-					if ($newItem) {
-						$newCollection.items += $newItem
-						if ($replace) { continue }
-					} else { continue }
+		if ($newItem -and !$findItem) {
+			$collection.items = @($newItem) + $collection.items
+			return $collection
+		}
+
+		$newCollection = [PSCustomObject]@{ items = @() }
+		foreach ($item in $collection.items) {
+			if ($item.items) {
+				$newCollection.items += [PSCustomObject]@{
+					Caption = $item.Caption
+					items   = (Update-CollectionItems -Collection $item -FindItem $findItem -NewItem $newItem -Replace:$replace).items
 				}
-				$newCollection.items += $item
+			} else {
+				if ($findItem) {
+					if (& $compare $findItem $item) {
+						if ($newItem) {
+							$newCollection.items += $newItem
+							if ($replace) { continue }
+						} else { continue }
+					}
+					$newCollection.items += $item
+				}
 			}
 		}
+		return $newCollection
 	}
-	return $newCollection
+
+	$tmp = if ($objJSON.Settings) { $objJSON.Settings } else { @{HotKeys = "Ctrl+Alt+Q"} }
+	$newCollection = Update-CollectionItems -Collection $collection -FindItem $findItem -NewItem $newItem -Replace:$replace
+# 	$newCollection | Add-Member -NotePropertyName 'Settings' -NotePropertyValue $tmp
+# 	$objJSON = $newCollection | Select-Object Settings, items
+	[PSCustomObject]$objJSON = [Ordered]@{
+		"Settings" = $tmp
+		"items" = $newCollection.items
+	}
+	$objJSON | ConvertTo-Json -Depth 10 | Set-Content -Path $jsonFile -Encoding UTF8
 }
 
 function Show-Form {
@@ -458,8 +473,7 @@ function Show-Form {
 		$btnCancel.Text = "Delete"
 		$btnCancel.ForeColor = "Red"
 		$btnCancel.Add_Click({
-			$objJSON = Update-Collection -Collection $objJSON -FindItem $sourceItem -NewItem $null
-			Save-JSON
+			Update-Collection -Collection $objJSON -FindItem $sourceItem -NewItem $null
 		})
 	} else {
 		$formEditItem.Text = "Add to $appName"
@@ -479,11 +493,10 @@ function Show-Form {
 		if ($cbWinStyle.SelectedIndex -ne 0) { $newItem.WindowStyle = $cbWinStyle.Text }
 		if ($chkAdmin.Checked)               { $newItem.RunAsAdmin = "1" }
 		if ($isEditMode) {
-			$objJSON = Update-Collection -Collection $objJSON -FindItem $sourceItem -NewItem $newItem -Replace
+			Update-Collection -Collection $objJSON -FindItem $sourceItem -NewItem $newItem -Replace
 		} else {
-			$objJSON = Update-Collection -Collection $objJSON -FindItem $originalItem -NewItem $newItem
+			Update-Collection -Collection $objJSON -FindItem $originalItem -NewItem $newItem
 		}
-		Save-JSON
 	}
 }
 
@@ -621,32 +634,28 @@ function Create-NotifyIconMenu {
 	}
 
 	function Set-HotKey {
-		$hotKeyForm.ShowInTaskbar = $false
-		$hotKeyForm.WindowState = "Minimized"
-		$hotKeyForm.Visible = $false
-		$regPath = "HKCU:\Software\qLaunch"
-		$valueName = "HotKeys"
-		$defaultValue = "Control+Alt+Q"
-		if (-not (Test-Path $regPath)) {
-			New-Item -Path $regPath -Force | Out-Null
-			Set-ItemProperty -Path $regPath -Name $valueName -Value $defaultValue
-		}
-		$hotkeyCombination = (Get-ItemProperty -Path $regPath -Name $valueName).$valueName
-		$modifiers = 0
-		$vkCode = 0
-		$hotkeyCombination.Split('+') | ForEach-Object {
-			switch ($_) {
-				"Control" { $modifiers += [Windows.Forms.Keys]::Control }
-				"Alt"     { $modifiers += [Windows.Forms.Keys]::Alt }
-				"Shift"   { $modifiers += [Windows.Forms.Keys]::Shift }
-				"Win"     { $modifiers += [Windows.Forms.Keys]::LWin }
-				default   { $vkCode = [Windows.Forms.Keys]::$_.Value__ }
+		if ($objJSON.Settings -and $objJSON.Settings.HotKeys) {
+			$hotKeyForm.ShowInTaskbar = $false
+			$hotKeyForm.WindowState = "Minimized"
+			$hotKeyForm.Visible = $false
+
+			$hotkeyCombination = $objJSON.Settings.HotKeys
+			$modifiers = 0
+			$vkCode = 0
+			$hotkeyCombination.Split('+') | ForEach-Object {
+				switch ($_) {
+					"Ctrl"   { $modifiers += [Windows.Forms.Keys]::Control }
+					"Alt"    { $modifiers += [Windows.Forms.Keys]::Alt }
+					"Shift"  { $modifiers += [Windows.Forms.Keys]::Shift }
+					"Win"    { $modifiers += [Windows.Forms.Keys]::LWin }
+					default  { $vkCode = [Windows.Forms.Keys]::$_.Value__ }
+				}
 			}
+			$HOTKEY_ID = 1
+			[HotKeyManager]::RegisterHotKey($hotKeyForm.Handle, $HOTKEY_ID, 
+				[HotKeyManager]::GetModifierKeys($modifiers), $vkCode) | Out-Null
+			$hotKeyForm.Add_HotKeyPressed({ Show-ContextMenu })
 		}
-		$HOTKEY_ID = 1
-		[HotKeyManager]::RegisterHotKey($hotKeyForm.Handle, $HOTKEY_ID, 
-			[HotKeyManager]::GetModifierKeys($modifiers), $vkCode) | Out-Null
-		$hotKeyForm.Add_HotKeyPressed({ Show-ContextMenu })
 	}
 
 	$menu = New-Object System.Windows.Forms.ContextMenuStrip
@@ -738,19 +747,22 @@ function Compile-Script {
 			return
 		}
 	}
-	$iconPath = "qLaunch.ico"
+	$iconPath = "$env:temp\qLaunch.ico"
 	$stream = [System.IO.File]::Create($iconPath)
 	$appIcon.Save($stream)
 	$stream.Close()
-	$version = '1.1.0'
+	$version = '1.2.0'
 	Invoke-PS2EXE -InputFile $PSCommandPath -x64 -noConsole -verbose -IconFile $iconPath -Title $appName -Product $appName -Copyright 'https://github.com/mozers3/qLaunch' -Company 'mozers™' -Version $version
 	Remove-Item $iconPath -Force -ErrorAction SilentlyContinue
+	Exit 0
 }
 
 # -----------------------------------------------------------------------------
 $appName = "ps Quick Launch"
 $jsonFile = "qLaunch.json"
 $appIcon = Initialize-AppIcon
+
+if ($cmdLine -eq "COMPILE") { Compile-Script }
 
 $scriptPath = Get-ScriptPath
 Set-Location -Path $scriptPath
@@ -764,9 +776,7 @@ if (!(Load-jsonFile $jsonFile)) {
 }
 
 if ($cmdLine) {
-	if ($cmdLine.ToUpper() -eq "COMPILE") {
-		Compile-Script
-	} elseif (Test-Path $cmdLine) {
+	if (Test-Path $cmdLine) {
 		$newFile = Get-FileInfo -FilePath $cmdLine
 		if ($newFile) {
 			Show-Form -SourceItem $newFile

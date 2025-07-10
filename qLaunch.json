@@ -1,4 +1,7 @@
 ﻿{
+    "Settings":  {
+                     "HotKeys":  "Ctrl+Alt+Q"
+                 },
     "items":  [
                   {
                       "Caption":  "All Applications",

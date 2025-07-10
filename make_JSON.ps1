@@ -103,17 +103,6 @@ function Get-DirectoryStructure {
 	return $result
 }
 
-function Get-KeyboardChoice {
-	Write-Host "File $jsonFile exist" -ForegroundColor Green
-	Write-Host "Create new JSON file [N] (default) or Add new items to JSON file [A] ?" -ForegroundColor Green
-	do {
-		$key = [Console]::ReadKey($true)
-		if ($key.Key -eq [ConsoleKey]::Enter) { return $false }
-		if ($key.Key -eq [ConsoleKey]::N)     { return $false }
-		if ($key.Key -eq [ConsoleKey]::A)     { return $true }
-	} while ($true)
-}
-
 # -----------------------------------------------------------
 
 $jsonFile = "qLaunch.json"
@@ -140,26 +129,33 @@ switch (Read-Host) {
 
 Write-Host "Source: $rootDir"
 
-$directoryStructure = @{
-	"items" = @(Get-DirectoryStructure -Path $rootDir).items
+$items = @(Get-DirectoryStructure -Path $rootDir).items
+[PSCustomObject]$directoryStructure = [Ordered]@{
+	"Settings" = @{ HotKeys = "Ctrl+Alt+Q" }
+	"items" = $items
 }
 
-if ($directoryStructure.items.Count -gt 0) {
+if ($items.Count -gt 0) {
+	$msg = "Create new file $jsonFile"
 	if (Test-Path $jsonFile) {
+		Write-Host "File $jsonFile exist" -ForegroundColor Green
+		Write-Host "Append new items [A] or Create New [N] JSON file (default [N])? " -ForegroundColor Green -noNewLine
+		if ((Read-Host) -eq "A") {
+			$msg = "Append data to file $jsonFile"
+			$jsonIn = Get-Content -Path $jsonFile -Raw -Encoding UTF8 | ConvertFrom-Json -ErrorAction Stop
+			$directoryStructure.Settings = $jsonIn.Settings
+			$directoryStructure.items += $jsonIn.items
+		}
+
 		$baseName = [System.IO.Path]::GetFileNameWithoutExtension($jsonFile)
 		$ext = [System.IO.Path]::GetExtension($jsonFile)
-		$bkFile = $baseName + "_" + (Get-Date -Format "yyyyMMddHHmmss") + $ext
+		$bkFile = $baseName + "_" + (Get-Date -Format "yyyy.MM.dd-HH.mm.ss") + $ext
+		Write-Host "Backup $jsonFile to $bkFile" -ForegroundColor Green
 		Copy-Item $jsonFile $bkFile
-		if (Get-KeyboardChoice) {
-			$jsonIn = Get-Content -Path $jsonFile -Raw -Encoding UTF8 | ConvertFrom-Json -ErrorAction Stop
-			$directoryStructure.items += $jsonIn.items
-			Write-Host "Append data to file $jsonFile"
-		} else {
-			Write-Host "Create new file $jsonFile"
-		}
 	}
-	[PSCustomObject]$directoryStructure | ConvertTo-Json -Depth 10 | Out-File -FilePath $jsonFile -Encoding utf8
-	Write-Host "Operation completed successfully" -ForegroundColor Green
+
+	$directoryStructure | ConvertTo-Json -Depth 10 | Out-File -FilePath $jsonFile -Encoding utf8
+	Write-Host $msg -ForegroundColor Green
 } else {
 	Write-Warning "Valid files not found!"
 }
