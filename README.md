@@ -20,7 +20,7 @@ Another variant to create a Quick Launch Toolbar in Windows 11
 2. Right-click menu items to:
     * Modify/delete existing items
     * Insert new items or separators above selection
-4. To bulk add items from system folders (**Quick Launch**, **Start Menu\Programs**) or any custom folder, run in CMD:
+4. To bulk add items from system folders (**Quick Launch**, **Start Menu\Programs**) or any custom folder, run in `Terminal` Windows:
 
 ![cmd](https://github.com/mozers3/qLaunch/wiki/images/cmd.png)
 
