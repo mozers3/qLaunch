@@ -151,7 +151,7 @@ function Get-Image {
 			$iconPath = Get-FullPath $matches[1]
 			$iconIndex = $matches[2]
 		}
-		if ($iconPath -and (Test-Path $iconPath)) {
+		if ($iconPath -and (Test-Path -LiteralPath $iconPath)) {
 			return Extract-Icon -FilePath $iconPath -IconIndex $iconIndex
 		}
 	}
@@ -174,12 +174,16 @@ function Get-FullPath {
 		if ($filePath -like "*%*") {
 			$filePath = [Environment]::ExpandEnvironmentVariables($filePath)
 		}
-		if (-not [System.IO.Path]::IsPathRooted($filePath) -and $filePath -notmatch "\\|/") {
-			$foundInPath = Get-Command $filePath -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source
-			if ($foundInPath) { $filePath = $foundInPath }
-		}
-		if (Test-Path -LiteralPath $filePath) {
-			return (Resolve-Path -LiteralPath $filePath).Path
+		try {
+			if (-not [System.IO.Path]::IsPathRooted($filePath) -and $filePath -notmatch "\\|/") {
+				$foundInPath = Get-Command $filePath -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source
+				if ($foundInPath) { $filePath = $foundInPath }
+			}
+			if (Test-Path -LiteralPath $filePath) {
+				return (Resolve-Path -LiteralPath $filePath).Path
+			}
+		} catch {
+			$notifyIcon.ShowBalloonTip(2000, "Warning", $_.Exception.Message, [Windows.Forms.ToolTipIcon]::Warning)
 		}
 	}
 }
@@ -195,7 +199,7 @@ function Run-MenuItem {
 	$workDir = Get-FullPath $sourceItem.WorkingDirectory
 	$winStyle = $sourceItem.WindowStyle
 	$runAsAdmin = $runAsAdmin -xor !![int]$sourceItem.RunAsAdmin
-	if (!$workDir) { $workDir = Split-Path -Path $filePath -Parent }
+	if (!$workDir) { $workDir = Split-Path $filePath -Parent }
 	if (!$workDir) {
 		$workDir = if ($PSCommandPath) {
 			Split-Path $PSCommandPath
@@ -298,7 +302,7 @@ function Create-MenuItems {
 }
 
 function Create-Menu {
-	Copy-Item $jsonFile -Destination "$jsonFile.bak"
+	Copy-Item -LiteralPath $jsonFile -Destination "$jsonFile.bak"
 
 	$menu.Items.Clear()
 	[void]$menu.Items.Add("Edit JSON", $null, { Start-Process notepad.exe -Args $jsonFile })
@@ -505,7 +509,7 @@ function Get-FileInfo {
 		[string]$filePath
 	)
 
-	$file = Get-Item $filePath -Force
+	$file = Get-Item -LiteralPath $filePath -Force
 	$newItem = @{}
 	$newItem.Caption = $file.BaseName
 	if ($file.Extension -like "*.lnk") {
@@ -604,7 +608,7 @@ function Load-jsonFile {
 		[string]$jsonFile
 	)
 
-	if (!(Test-Path $jsonFile)) {
+	if (!(Test-Path -LiteralPath $jsonFile)) {
 		[void][System.Windows.Forms.MessageBox]::Show("File $jsonFile not exist!", $appName, "OK", "Error")
 		exit 1
 	}
@@ -694,9 +698,9 @@ function Create-NotifyIconMenu {
 			Create-Menu
 			$notifyIcon.ShowBalloonTip(1000, "JSON file has been modified", "Menu content updated", [Windows.Forms.ToolTipIcon]::Info)
 		} else {
-			if (Test-Path "$jsonFile.bak") {
+			if (Test-Path -LiteralPath "$jsonFile.bak") {
 				$notifyIcon.ShowBalloonTip(2000, "Invalid JSON content", "Сhanges not accepted", [Windows.Forms.ToolTipIcon]::Warning)
-				Copy-Item "$jsonFile.bak" -Destination $jsonFile
+				Copy-Item -LiteralPath "$jsonFile.bak" -Destination $jsonFile
 			} else {
 				$notifyIcon.ShowBalloonTip(3000, "Invalid JSON file $jsonFile", "Please correct the content errors", [Windows.Forms.ToolTipIcon]::Error)
 				Start-Process notepad.exe -Args $jsonFile
@@ -751,7 +755,7 @@ function Compile-Script {
 	$stream = [System.IO.File]::Create($iconPath)
 	$appIcon.Save($stream)
 	$stream.Close()
-	$version = '1.2.0'
+	$version = '1.2.1'
 	Invoke-PS2EXE -InputFile $PSCommandPath -x64 -noConsole -verbose -IconFile $iconPath -Title $appName -Product $appName -Copyright 'https://github.com/mozers3/qLaunch' -Company 'mozers™' -Version $version
 	Remove-Item $iconPath -Force -ErrorAction SilentlyContinue
 	Exit 0
@@ -776,7 +780,7 @@ if (!(Load-jsonFile $jsonFile)) {
 }
 
 if ($cmdLine) {
-	if (Test-Path $cmdLine) {
+	if (Test-Path -LiteralPath $cmdLine) {
 		$newFile = Get-FileInfo -FilePath $cmdLine
 		if ($newFile) {
 			Show-Form -SourceItem $newFile

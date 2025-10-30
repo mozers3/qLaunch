@@ -14,8 +14,8 @@
                       "Target":  "explorer"
                   },
                   {
-                      "Target":  "%ProgramFiles(x86)%\\Microsoft\\Edge\\Application\\msedge.exe",
-                      "Caption":  "Microsoft Edge"
+                      "Caption":  "Microsoft Edge",
+                      "Target":  "%ProgramFiles(x86)%\\Microsoft\\Edge\\Application\\msedge.exe"
                   },
                   {
                       "type":  "separator"
