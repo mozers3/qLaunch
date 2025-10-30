@@ -5,6 +5,7 @@ Another variant to create a Quick Launch Toolbar in Windows 11
 
 ### Features:
 * Works on modern Windows versions (tested on Windows 10/11)
+* Can be used as a portable application
 * Creates a clear cascading menu with separators
 * Can be triggered either by clicking the taskbar icon or via a hotkey combo (default: `Ctrl+Alt+Q`)
 * Two easy methods for adding any programs or documents to the **ps Quick Launch** menu:
@@ -13,6 +14,7 @@ Another variant to create a Quick Launch Toolbar in Windows 11
 * Automatic menu generation from system folders like **Quick Launch**, **Start Menu\Programs**, or any custom folder
 * Edit any menu item (_right-click on main menu entry_) or the entire menu (via "Edit JSON")
 * Ability to add custom commands with parameters (e.g., hidden mode launch)
+* The path to the new menu item file (or icon file) can use environment variables or a relative path (relative to the qLaunch directory). If the executable file is accessible via %PATH%, specifying the path is not necessary.
 * Supports running programs as Administrator (**Elevated Mode**)
 
 ### How to Use:
