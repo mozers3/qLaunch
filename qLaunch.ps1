@@ -254,6 +254,7 @@ function Menu-MouseClick {
 		}
 		$actionMenu.Items[5].Add_Click{ # Add file
 			$fileDialog = New-Object System.Windows.Forms.OpenFileDialog
+			$fileDialog.DereferenceLinks = $false
 			$fileDialog.Title = "Select file"
 			$result = $fileDialog.ShowDialog()
 			if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
@@ -755,7 +756,7 @@ function Compile-Script {
 	$stream = [System.IO.File]::Create($iconPath)
 	$appIcon.Save($stream)
 	$stream.Close()
-	$version = '1.2.1'
+	$version = '1.2.2'
 	Invoke-PS2EXE -InputFile $PSCommandPath -x64 -noConsole -verbose -IconFile $iconPath -Title $appName -Product $appName -Copyright 'https://github.com/mozers3/qLaunch' -Company 'mozers™' -Version $version
 	Remove-Item $iconPath -Force -ErrorAction SilentlyContinue
 	Exit 0
