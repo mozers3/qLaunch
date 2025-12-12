@@ -1,6 +1,7 @@
 ﻿{
     "Settings":  {
-                     "HotKeys":  "Ctrl+Alt+Q"
+                     "HotKeys":  "Ctrl+Alt+Q",
+                     "Editor":  ""
                  },
     "items":  [
                   {

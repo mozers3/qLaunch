@@ -11,8 +11,9 @@ Another variant to create a Quick Launch Toolbar in Windows 11
 * Two easy methods for adding any programs or documents to the **ps Quick Launch** menu:
     * Via a dedicated context menu (_right-click any main menu entry_)
     * Via the item "Send to" file's system context menu
-* Automatic menu generation from system folders like **Quick Launch**, **Start Menu\Programs**, or any custom folder
+* Automatic menu generation from system folders like **Quick Launch**, **Start Menu\Programs**, or any custom folder (make_JSON.ps1)
 * Edit any menu item (_right-click on main menu entry_) or the entire menu (via "Edit JSON")
+* JSON editing is by default done in the built-in editor, with syntax highlighting, validation and formatting
 * Ability to add custom commands with parameters (e.g., hidden mode launch)
 * The path to the new menu item file (or icon file) can use environment variables or a relative path (relative to the qLaunch directory). If the executable file is accessible via %PATH%, specifying the path is not necessary.
 * Supports running programs as Administrator (**Elevated Mode**)
@@ -28,8 +29,12 @@ Another variant to create a Quick Launch Toolbar in Windows 11
 
 6. Add any file to the menu by right-clicking it, selecting "Send to" in the system context menu (_in Windows 11, hold `Shift` to reveal it_), then choosing `ps Quick Launch`.
 7. Full menu customization is available via "Edit JSON" option:
-    * If user-made edits to `qLaunch.json` contain errors, the program automatically restores the last working version
-    * To validate JSON syntax after manual editing, use [JSONLint](https://jsonlint.com)
+    * By default, editing is done in the built-in editor
+    * You can specify any external editor (e.g. "`notepad`") by setting the value of the `Editor` key in the `Settings` section of `qLaunch.json`
+    * The editor will not allow to save a file damaged by editing and will point out the error you made
+
+![editor](https://github.com/mozers3/qLaunch/wiki/images/editor.png)
+
 8. Hotkey customization: Modify the default `Ctrl+Alt+Q` shortcut by editing the `HotKeys` value in the `Settings` section of `qLaunch.json` (_requires program restart_)
 9. Hold `Shift` while clicking a menu item to run it as Administrator (**Elevated Mode**).
 

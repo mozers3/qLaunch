@@ -5,6 +5,284 @@
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
+# -----------------------------------------------------------------------------
+
+# Fix RichTextBox Caret
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
+
+public class Win32 {
+	[DllImport("user32.dll")]
+	public static extern bool InvalidateRect(IntPtr hWnd, IntPtr lpRect, bool bErase);
+
+	[DllImport("user32.dll")]
+	public static extern bool UpdateWindow(IntPtr hWnd);
+}
+
+public class FixRichTextBoxCaret {
+	private static Timer _timer;
+	private static DateTime _lastActivity = DateTime.Now;
+	private static RichTextBox _rtb;
+	private static bool _isTimerActive = false;
+
+	public static void Initialize(RichTextBox rtb) {
+		_rtb = rtb;
+		Application.Idle += OnApplicationIdle;
+		SubscribeToUserActivityEvents(rtb);
+	}
+
+	private static void SubscribeToUserActivityEvents(RichTextBox rtb) {
+		rtb.KeyPress += OnUserActivity;
+		rtb.KeyUp += OnUserActivity;
+		rtb.KeyDown += OnUserActivity;
+		rtb.MouseClick += OnUserActivity;
+		rtb.MouseDown += OnUserActivity;
+		rtb.MouseUp += OnUserActivity;
+		rtb.MouseWheel += OnUserActivity;
+		rtb.Leave += OnUserActivity;
+		rtb.Enter += OnUserActivity;
+		rtb.SelectionChanged += OnUserActivity;
+	}
+
+	private static void OnUserActivity(object sender, EventArgs e) {
+		_lastActivity = DateTime.Now;
+		StopTimerIfRunning();
+	}
+
+	private static void OnApplicationIdle(object sender, EventArgs e) {
+		if ((DateTime.Now - _lastActivity).TotalSeconds >= 3 &&
+			_rtb.Focused && _rtb.SelectionLength == 0 && !_isTimerActive) {
+			StartTimer();
+		}
+	}
+
+	private static void StartTimer() {
+		if (_timer == null) {
+			_timer = new Timer();
+			_timer.Interval = 5000;
+			_timer.Tick += OnTimerTick;
+		}
+		_isTimerActive = true;
+		_timer.Start();
+	}
+
+	private static void StopTimerIfRunning() {
+		if (_timer != null && _timer.Enabled) {
+			_timer.Stop();
+		}
+		_isTimerActive = false;
+	}
+
+	private static void OnTimerTick(object sender, EventArgs e) {
+		if (_rtb.Focused && _rtb.SelectionLength == 0) {
+			Win32.InvalidateRect(_rtb.Handle, IntPtr.Zero, false);
+			Win32.UpdateWindow(_rtb.Handle);
+		} else {
+			StopTimerIfRunning();
+		}
+	}
+}
+'@ -ReferencedAssemblies System.Windows.Forms, System.Drawing
+
+# Highlight JSON Syntax
+Add-Type -TypeDefinition @"
+using System;
+using System.Windows.Forms;
+using System.Drawing;
+using System.Text.RegularExpressions;
+using System.Runtime.InteropServices;
+
+public static class JsonHelper {
+	private const int WM_SETREDRAW = 0x000B;
+	private const int EM_GETSCROLLPOS = 0x04DD;
+	private const int EM_SETSCROLLPOS = 0x04DE;
+
+	[DllImport("user32.dll")]
+	private static extern int SendMessage(IntPtr hWnd, int wMsg, int wParam, ref Point lParam);
+
+	[DllImport("user32.dll")]
+	private static extern int SendMessage(IntPtr hWnd, int wMsg, bool wParam, int lParam);
+
+	public static void HighlightSyntax(RichTextBox rtb) {
+		if (rtb == null || string.IsNullOrEmpty(rtb.Text)) return;
+
+		Point scrollPos = Point.Empty;
+		int selectionStart = rtb.SelectionStart;
+		Color currentColor = rtb.SelectionColor;
+		SendMessage(rtb.Handle, EM_GETSCROLLPOS, 0, ref scrollPos);
+		SendMessage(rtb.Handle, WM_SETREDRAW, false, 0);
+
+		try {
+			ApplyHighlight(rtb, @"\""[^\""]*\""(?=\s*:)", Color.Blue);
+			ApplyHighlight(rtb, @"(?<=:\s*)""(?:\\""|[^""])*""(?=\s*|\s*})", Color.DarkGreen);
+		} finally {
+			rtb.Select(selectionStart, 0);
+			rtb.SelectionColor = currentColor;
+			SendMessage(rtb.Handle, EM_SETSCROLLPOS, 0, ref scrollPos);
+			SendMessage(rtb.Handle, WM_SETREDRAW, true, 0);
+			rtb.Invalidate();
+		}
+	}
+
+	private static void ApplyHighlight(RichTextBox rtb, string pattern, Color color) {
+		foreach (Match match in Regex.Matches(rtb.Text, pattern)) {
+			rtb.Select(match.Index, match.Length);
+			rtb.SelectionColor = color;
+		}
+	}
+}
+"@ -ReferencedAssemblies "System.Windows.Forms", "System.Drawing", "System.Text.RegularExpressions"
+
+function JSON-Editor {
+	param (
+		[string]$jsonFilePath
+	)
+
+	function Initialize-AppIcon {
+		$iconBase64 = "AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAACAAAAAgIAAgAAAAIAAgADIyAAAgICAAMDAwAAAAP8AAP8AAAD//wD/AAAA/wD/AP//AAD///8AAAAAAAAAAAAABmAAAAZgAABmAAAAAGYAAGYABmAAZgAAZgAGYABmAABmAAZgAGYABmAABmAABmBmAAAGYAAAZgZgAAZgAAZgAGYABmAAZgAAZgAAAABmAABmAAZgAGYAAGYABmAAZgAAZgAAAABmAAAGYAAABmAAAAAAAAAAAAD//wAA5+cAAM/zAADOcwAAznMAAM5zAACeeQAAPnwAAJ55AADOcwAAz/MAAM5zAADOcwAAz/MAAOfnAAD//wAA"
+		$iconBytes = [Convert]::FromBase64String($iconBase64)
+		$stream = [System.IO.MemoryStream]::new($iconBytes)
+		return [System.Drawing.Icon]::new($stream)
+	}
+
+	function Validate-Json {
+		$toolTip = New-Object System.Windows.Forms.ToolTip
+		$toolTip.IsBalloon = $true
+		$toolTip.ToolTipTitle = "Validate"
+		$x = 14
+		$y = $richTextBox.Height - 86
+
+		$text = $richTextBox.Text
+		$ret = $false
+		try {
+			$obj = $text | ConvertFrom-Json
+
+			$msgText = "JSON is valid!"
+			$toolTip.ToolTipIcon = "Info"
+			$ret = $true
+		} catch [Exception] {
+			$toolTip.ToolTipIcon = "Warning"
+
+			$errorMsg = $_.Exception.Message
+			$match = [regex]::Match($errorMsg, '^(.*?)\((\d+)\):\s*([\s\S]*)')
+			if ($match.Success -and $match.Groups.Count -ge 4) {
+				$errorMsg = $match.Groups[1].Value.Trim()
+				[int]$errorPos = $match.Groups[2].Value
+				$jsonText = $match.Groups[3].Value
+				if ($errorPos) {
+					$errorPos = $jsonText.Substring(0, $errorPos-1).TrimEnd().Length
+
+					$richTextBox.Select($errorPos, 1)
+					$pos = $richTextBox.GetPositionFromCharIndex($errorPos)
+					$x = $pos.X
+					$y = $pos.Y - 70
+				}
+			}
+			$msgText = $errorMsg
+		}
+		$toolTip.Show($msgText, $richTextBox, $x, $y, 10000)
+		return $ret
+	}
+
+	function Save-File {
+		$text = $richTextBox.Text -replace "`r?`n", "`r`n"
+		[System.IO.File]::WriteAllText($jsonFilePath, $text, [System.Text.Encoding]::UTF8)
+		$script:originalHash = Get-Hash
+	}
+
+	function Get-Hash {
+		$hasher = [System.Security.Cryptography.MD5]::Create()
+		return [System.BitConverter]::ToString($hasher.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($richTextBox.Text)))
+	}
+
+	$jsonText = Get-Content -Path $jsonFilePath -Encoding UTF8 -Raw
+
+	$form = New-Object System.Windows.Forms.Form
+	$form.Width = 900
+	$form.Height = 600
+	$form.Text = $jsonFilePath
+	$form.Icon = Initialize-AppIcon
+	$form.Add_Load({
+		if (-not [string]::IsNullOrEmpty($jsonText)) {
+			$richTextBox.Text = $jsonText
+			[JsonHelper]::HighlightSyntax($richTextBox)
+			$script:originalHash = Get-Hash
+		}
+	})
+	$form.Add_FormClosing({
+		param($sender, $e)
+		if ($originalHash -ne (Get-Hash)) {
+			if ([System.Windows.Forms.MessageBox]::Show("Content changed. Save?", "Confirm", "YesNo", "Question") -eq "Yes") {
+				if (Validate-Json) {
+					Save-File
+				} else {
+					$e.Cancel = $true
+				}
+			}
+		}
+	})
+
+	$richTextBox = New-Object System.Windows.Forms.RichTextBox
+	$richTextBox.Dock = [System.Windows.Forms.DockStyle]::Fill
+	$richTextBox.Font = New-Object System.Drawing.Font("Consolas", 11)
+	$richTextBox.ForeColor = "Red"
+	$richTextBox.WordWrap = $false
+	$richTextBox.ScrollBars = [System.Windows.Forms.RichTextBoxScrollBars]::Both
+	$richTextBox.DetectUrls = $true
+	$richTextBox.Add_LinkClicked({
+		param($sender, $e)
+		$url = $e.LinkText
+		if (-not ($url -match "^https?://")) { $url = "http://$url" }
+		[void][System.Diagnostics.Process]::Start($url)
+	})
+	$form.Controls.Add($richTextBox)
+
+	$toolStrip = New-Object System.Windows.Forms.ToolStrip
+	$btnValidate  = $toolStrip.Items.Add("&Validate")
+	$btnValidate.Add_Click({
+		[JsonHelper]::HighlightSyntax($richTextBox)
+		Validate-Json
+	})
+	$btnFormat    = $toolStrip.Items.Add("&Format")
+	$btnFormat.Add_Click({
+		try {
+			$obj = $richTextBox.Text | ConvertFrom-Json
+			$richTextBox.Text = $obj | ConvertTo-Json -Depth 10
+			[JsonHelper]::HighlightSyntax($richTextBox)
+		} catch {
+			Validate-Json
+		}
+	})
+	$btnSave      = $toolStrip.Items.Add("&Save")
+	$btnSave.Add_Click({
+		if (Validate-Json) { Save-File }
+	})
+	$form.Controls.Add($toolStrip)
+
+	$contextMenu = New-Object System.Windows.Forms.ContextMenuStrip
+	$cutItem = New-Object System.Windows.Forms.ToolStripMenuItem("Cut")
+	$cutItem.Add_Click({ $richTextBox.Cut() })
+	$copyItem = New-Object System.Windows.Forms.ToolStripMenuItem("Copy")
+	$copyItem.Add_Click({ $richTextBox.Copy() })
+	$pasteItem = New-Object System.Windows.Forms.ToolStripMenuItem("Paste")
+	$pasteItem.Add_Click({ $richTextBox.Paste() })
+	$deleteItem = New-Object System.Windows.Forms.ToolStripMenuItem("Delete")
+	$deleteItem.Add_Click({ $richTextBox.SelectedText = "" })
+	$selectAllItem = New-Object System.Windows.Forms.ToolStripMenuItem("Select All")
+	$selectAllItem.Add_Click({ $richTextBox.SelectAll() })
+	$separator = New-Object System.Windows.Forms.ToolStripSeparator
+	$contextMenu.Items.AddRange(( $cutItem, $copyItem, $pasteItem, $deleteItem, $separator, $selectAllItem ))
+	$richTextBox.ContextMenuStrip = $contextMenu
+
+	[FixRichTextBoxCaret]::Initialize($richTextBox)
+
+	[void]$form.ShowDialog()
+}
+
+# -----------------------------------------------------------------------------
+
 # Register HotKey
 Add-Type -TypeDefinition @"
 	using System;
@@ -114,6 +392,21 @@ public class IconExtractor {
 	}
 }
 "@ -ReferencedAssemblies System.Drawing
+
+function Start-Editor {
+	param (
+		[string]$filePath
+	)
+
+	if ($objJSON.Settings -and $objJSON.Settings.Editor) {
+		$editor = Get-FullPath $objJSON.Settings.Editor
+		if ($editor) {
+			Start-Process $editor -Args $filePath
+		}
+	} else {
+		JSON-Editor $filePath
+	}
+}
 
 function Extract-Icon {
 	param (
@@ -306,7 +599,7 @@ function Create-Menu {
 	Copy-Item -LiteralPath $jsonFile -Destination "$jsonFile.bak"
 
 	$menu.Items.Clear()
-	[void]$menu.Items.Add("Edit JSON", $null, { Start-Process notepad.exe -Args $jsonFile })
+	[void]$menu.Items.Add("Edit JSON", $null, { Start-Editor $jsonFile })
 	[void]$menu.Items.Add("-")
 	Create-MenuItems -parent $menu.Items -items $objJSON.items
 	[void]$menu.Items.Add("-")
@@ -362,7 +655,7 @@ function Update-Collection {
 		return $newCollection
 	}
 
-	$tmp = if ($objJSON.Settings) { $objJSON.Settings } else { @{HotKeys = "Ctrl+Alt+Q"} }
+	$tmp = if ($objJSON.Settings) { $objJSON.Settings } else { @{HotKeys = "Ctrl+Alt+Q"; Editor = ""} }
 	$newCollection = Update-CollectionItems -Collection $collection -FindItem $findItem -NewItem $newItem -Replace:$replace
 	[PSCustomObject]$objJSON = [Ordered]@{
 		"Settings" = $tmp
@@ -702,7 +995,7 @@ function Create-NotifyIconMenu {
 				Copy-Item -LiteralPath "$jsonFile.bak" -Destination $jsonFile
 			} else {
 				$notifyIcon.ShowBalloonTip(3000, "Invalid JSON file $jsonFile", "Please correct the content errors", [Windows.Forms.ToolTipIcon]::Error)
-				Start-Process notepad.exe -Args $jsonFile
+				Start-Editor $jsonFile
 			}
 		}
 		$watcher.EnableRaisingEvents = $true
@@ -754,7 +1047,7 @@ function Compile-Script {
 	$stream = [System.IO.File]::Create($iconPath)
 	$appIcon.Save($stream)
 	$stream.Close()
-	$version = '1.2.2'
+	$version = '1.3.0'
 	Invoke-PS2EXE -InputFile $PSCommandPath -x64 -noConsole -verbose -IconFile $iconPath -Title $appName -Product $appName -Copyright 'https://github.com/mozers3/qLaunch' -Company 'mozers™' -Version $version
 	Remove-Item $iconPath -Force -ErrorAction SilentlyContinue
 	Exit 0
@@ -774,7 +1067,7 @@ $objJSON = @{}
 
 if (!(Load-jsonFile $jsonFile)) {
 	[void][System.Windows.Forms.MessageBox]::Show("Invalid JSON file $jsonFile", $appName, "OK", "Error")
-	Start-Process notepad.exe -Args $jsonFile
+	Start-Editor $jsonFile
 	Exit 1
 }
 
