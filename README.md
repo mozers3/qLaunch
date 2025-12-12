@@ -15,7 +15,7 @@ Another variant to create a Quick Launch Toolbar in Windows 11
 * Edit any menu item (_right-click on main menu entry_) or the entire menu (via "Edit JSON")
 * Ability to add custom commands with parameters (e.g., hidden mode launch)
 * The path to the new menu item file (or icon file) can use environment variables or a relative path (relative to the qLaunch directory). If the executable file is accessible via %PATH%, specifying the path is not necessary.
-* Supports running programs as Administrator (**Elevated Mode**).
+* Supports running programs as Administrator (**Elevated Mode**)
 
 ### How to Use:
 1. To launch, you need the files `qLaunch.exe` and `qLaunch.json`.
