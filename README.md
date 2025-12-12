@@ -13,7 +13,7 @@ Another variant to create a Quick Launch Toolbar in Windows 11
     * Via the item "Send to" file's system context menu
 * Automatic menu generation from system folders like **Quick Launch**, **Start Menu\Programs**, or any custom folder (make_JSON.ps1)
 * Edit any menu item (_right-click on main menu entry_) or the entire menu (via "Edit JSON")
-* JSON editing is by default done in the built-in editor, with syntax highlighting, validation and formatting
+* `qLaunch.json` can be edited in a built-in editor with syntax highlighting, validation, and formatting
 * Ability to add custom commands with parameters (e.g., hidden mode launch)
 * The path to the new menu item file (or icon file) can use environment variables or a relative path (relative to the qLaunch directory). If the executable file is accessible via %PATH%, specifying the path is not necessary.
 * Supports running programs as Administrator (**Elevated Mode**)
