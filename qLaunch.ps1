@@ -364,8 +364,6 @@ function Update-Collection {
 
 	$tmp = if ($objJSON.Settings) { $objJSON.Settings } else { @{HotKeys = "Ctrl+Alt+Q"} }
 	$newCollection = Update-CollectionItems -Collection $collection -FindItem $findItem -NewItem $newItem -Replace:$replace
-# 	$newCollection | Add-Member -NotePropertyName 'Settings' -NotePropertyValue $tmp
-# 	$objJSON = $newCollection | Select-Object Settings, items
 	[PSCustomObject]$objJSON = [Ordered]@{
 		"Settings" = $tmp
 		"items" = $newCollection.items
