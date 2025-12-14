@@ -214,7 +214,7 @@ function JSON-Editor {
 	$form.Add_FormClosing({
 		param($sender, $e)
 		if ($originalHash -ne (Get-Hash)) {
-			if ([System.Windows.Forms.MessageBox]::Show("Content changed. Save?", "Confirm", "YesNo", "Question") -eq "Yes") {
+			if ([System.Windows.Forms.MessageBox]::Show("Content changed. Save?", $appName, "YesNo", "Question") -eq "Yes") {
 				if (Validate-Json) {
 					Save-File
 				} else {
@@ -402,10 +402,10 @@ function Start-Editor {
 		$editor = Get-FullPath $objJSON.Settings.Editor
 		if ($editor) {
 			Start-Process $editor -Args $filePath
+			return
 		}
-	} else {
-		JSON-Editor $filePath
 	}
+	JSON-Editor $filePath
 }
 
 function Extract-Icon {
@@ -655,10 +655,21 @@ function Update-Collection {
 		return $newCollection
 	}
 
-	$tmp = if ($objJSON.Settings) { $objJSON.Settings } else { @{HotKeys = "Ctrl+Alt+Q"; Editor = ""} }
+	$defaults = @{ HotKeys = "Ctrl+Alt+Q"; Editor = "built-in" }
+	$settings = $objJSON.Settings
+	if (-not $settings) {
+		$settings = $defaults.Clone()
+	} else {
+		foreach ($key in $defaults.Keys) {
+			if (-not $settings.PSObject.Properties.Item($key)) {
+				$settings | Add-Member -NotePropertyName $key -NotePropertyValue $defaults[$key]
+			}
+		}
+	}
+
 	$newCollection = Update-CollectionItems -Collection $collection -FindItem $findItem -NewItem $newItem -Replace:$replace
 	[PSCustomObject]$objJSON = [Ordered]@{
-		"Settings" = $tmp
+		"Settings" = $settings
 		"items" = $newCollection.items
 	}
 	$objJSON | ConvertTo-Json -Depth 10 | Set-Content -Path $jsonFile -Encoding UTF8
@@ -1047,7 +1058,7 @@ function Compile-Script {
 	$stream = [System.IO.File]::Create($iconPath)
 	$appIcon.Save($stream)
 	$stream.Close()
-	$version = '1.3.0'
+	$version = '1.3.1'
 	Invoke-PS2EXE -InputFile $PSCommandPath -x64 -noConsole -verbose -IconFile $iconPath -Title $appName -Product $appName -Copyright 'https://github.com/mozers3/qLaunch' -Company 'mozers™' -Version $version
 	Remove-Item $iconPath -Force -ErrorAction SilentlyContinue
 	Exit 0

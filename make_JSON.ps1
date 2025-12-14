@@ -131,7 +131,7 @@ Write-Host "Source: $rootDir"
 
 $items = @(Get-DirectoryStructure -Path $rootDir).items
 [PSCustomObject]$directoryStructure = [Ordered]@{
-	"Settings" = @{ HotKeys = "Ctrl+Alt+Q"; Editor = "" }
+	"Settings" = @{ HotKeys = "Ctrl+Alt+Q"; Editor = "built-in" }
 	"items" = $items
 }
 
