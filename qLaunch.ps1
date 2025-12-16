@@ -599,7 +599,7 @@ function Create-Menu {
 	Copy-Item -LiteralPath $jsonFile -Destination "$jsonFile.bak"
 
 	$menu.Items.Clear()
-	[void]$menu.Items.Add("Edit JSON", $null, { Start-Editor $jsonFile })
+	[void]$menu.Items.Add("Edit JSON", $null, { Start-Editor "$scriptPath\$jsonFile" })
 	[void]$menu.Items.Add("-")
 	Create-MenuItems -parent $menu.Items -items $objJSON.items
 	[void]$menu.Items.Add("-")
@@ -1006,7 +1006,7 @@ function Create-NotifyIconMenu {
 				Copy-Item -LiteralPath "$jsonFile.bak" -Destination $jsonFile
 			} else {
 				$notifyIcon.ShowBalloonTip(3000, "Invalid JSON file $jsonFile", "Please correct the content errors", [Windows.Forms.ToolTipIcon]::Error)
-				Start-Editor $jsonFile
+				Start-Editor "$scriptPath\$jsonFile"
 			}
 		}
 		$watcher.EnableRaisingEvents = $true
@@ -1058,7 +1058,7 @@ function Compile-Script {
 	$stream = [System.IO.File]::Create($iconPath)
 	$appIcon.Save($stream)
 	$stream.Close()
-	$version = '1.3.1'
+	$version = '1.3.2'
 	Invoke-PS2EXE -InputFile $PSCommandPath -x64 -noConsole -verbose -IconFile $iconPath -Title $appName -Product $appName -Copyright 'https://github.com/mozers3/qLaunch' -Company 'mozers™' -Version $version
 	Remove-Item $iconPath -Force -ErrorAction SilentlyContinue
 	Exit 0
@@ -1078,7 +1078,7 @@ $objJSON = @{}
 
 if (!(Load-jsonFile $jsonFile)) {
 	[void][System.Windows.Forms.MessageBox]::Show("Invalid JSON file $jsonFile", $appName, "OK", "Error")
-	Start-Editor $jsonFile
+	Start-Editor "$scriptPath\$jsonFile"
 	Exit 1
 }
 
