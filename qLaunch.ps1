@@ -249,7 +249,7 @@ function JSON-Editor {
 	$btnFormat.Add_Click({
 		try {
 			$obj = $richTextBox.Text | ConvertFrom-Json
-			$richTextBox.Text = $obj | ConvertTo-Json -Depth 10
+			$richTextBox.Text = $obj | ConvertTo-Json -Depth 100
 			[JsonHelper]::HighlightSyntax($richTextBox)
 		} catch {
 			Validate-Json
@@ -596,8 +596,6 @@ function Create-MenuItems {
 }
 
 function Create-Menu {
-	Copy-Item -LiteralPath $jsonFile -Destination "$jsonFile.bak"
-
 	$menu.Items.Clear()
 	[void]$menu.Items.Add("Edit JSON", $null, { Start-Editor "$scriptPath\$jsonFile" })
 	[void]$menu.Items.Add("-")
@@ -608,6 +606,14 @@ function Create-Menu {
 		$notifyIcon.Dispose()
 		[System.Windows.Forms.Application]::Exit()
 	})
+}
+
+function Compare-JSON {
+    param($jsonA, $jsonB)
+    return (
+        ($jsonA | ConvertTo-Json -Depth 100 -Compress) -eq
+        ($jsonB | ConvertTo-Json -Depth 100 -Compress)
+    )
 }
 
 function Update-Collection {
@@ -626,8 +632,6 @@ function Update-Collection {
 			[switch]$replace
 		)
 
-		$compare = { param($a, $b) ($a | ConvertTo-Json) -eq ($b | ConvertTo-Json) }
-
 		if ($newItem -and !$findItem) {
 			$collection.items = @($newItem) + $collection.items
 			return $collection
@@ -642,7 +646,7 @@ function Update-Collection {
 				}
 			} else {
 				if ($findItem) {
-					if (& $compare $findItem $item) {
+					if (Compare-JSON $findItem $item) {
 						if ($newItem) {
 							$newCollection.items += $newItem
 							if ($replace) { continue }
@@ -672,7 +676,7 @@ function Update-Collection {
 		"Settings" = $settings
 		"items" = $newCollection.items
 	}
-	$objJSON | ConvertTo-Json -Depth 10 | Set-Content -Path $jsonFile -Encoding UTF8
+	$objJSON | ConvertTo-Json -Depth 100 | Set-Content -Path $jsonFile -Encoding UTF8
 }
 
 function Show-Form {
@@ -919,9 +923,16 @@ function Load-jsonFile {
 	try {
 		$jsonContent = Get-Content -Path $jsonFile -Raw -Encoding UTF8
 		$script:objJSON = $jsonContent | ConvertFrom-Json -ErrorAction Stop
+		$hasContent = -not (
+			($previousJson -is [hashtable] -and $previousJson.Count -eq 0) -or
+			($previousJson -is [PSCustomObject] -and $previousJson.PSObject.Properties.Count -eq 0)
+		)
+		if ($hasContent -and -not (Compare-JSON $previousJson $script:objJSON)) {
+			$previousJson | ConvertTo-Json -Depth 100 | Set-Content -Path "$jsonFile.bak" -Encoding UTF8
+		}
 		return $true
 	} catch {
-		if ($previousJson) {
+		if ($previousJson.Count -gt 0) {
 			$script:objJSON = $previousJson
 			return $false
 		} else {
@@ -1058,7 +1069,7 @@ function Compile-Script {
 	$stream = [System.IO.File]::Create($iconPath)
 	$appIcon.Save($stream)
 	$stream.Close()
-	$version = '1.3.2'
+	$version = '1.4.0'
 	Invoke-PS2EXE -InputFile $PSCommandPath -x64 -noConsole -verbose -IconFile $iconPath -Title $appName -Product $appName -Copyright 'https://github.com/mozers3/qLaunch' -Company 'mozers™' -Version $version
 	Remove-Item $iconPath -Force -ErrorAction SilentlyContinue
 	Exit 0
