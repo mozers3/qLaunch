@@ -559,8 +559,10 @@ function Menu-MouseClick {
 		$screenPos = $menuItem.Owner.PointToScreen([System.Drawing.Point]::new($menuItem.Bounds.Right, $menuItem.Bounds.Top))
 		$actionMenu.Show($screenPos)
 	} else {
-		$runAsAdmin = ([System.Windows.Forms.Control]::ModifierKeys -eq [System.Windows.Forms.Keys]::Shift)
-		Run-MenuItem -SourceItem $menuItem.Tag -RunAsAdmin $runAsAdmin
+		if ($menuItem.ForeColor -ne [System.Drawing.Color]::Gray) {
+			$runAsAdmin = ([System.Windows.Forms.Control]::ModifierKeys -eq [System.Windows.Forms.Keys]::Shift)
+			Run-MenuItem -SourceItem $menuItem.Tag -RunAsAdmin $runAsAdmin
+		}
 	}
 }
 
@@ -579,14 +581,16 @@ function Create-MenuItems {
 		} else {
 			if ($item.type -ne "separator") {
 				$target = Get-FullPath $item.Target
-				if ($target) {
-					$menuItem = New-Object ContextMenuItem
-					$menuItem.Text = $item.Caption
-					$menuItem.Image = Get-Image -Icon $item.Icon -Tagent $target
-					$menuItem.Tag = $item
-					$menuItem.Add_Click({Menu-MouseClick $this})
-					[void]$parent.Add($menuItem)
+				$menuItem = New-Object ContextMenuItem
+				if (-not $target) {
+					$menuItem.Font = New-Object System.Drawing.Font($menuItem.Font, [System.Drawing.FontStyle]::Strikeout)
+					$menuItem.ForeColor = [System.Drawing.Color]::Gray
 				}
+				$menuItem.Text = $item.Caption
+				$menuItem.Image = Get-Image -Icon $item.Icon -Tagent $target
+				$menuItem.Tag = $item
+				$menuItem.Add_Click({Menu-MouseClick $this})
+				[void]$parent.Add($menuItem)
 			} else {
 				$menuItem = New-Object System.Windows.Forms.ToolStripSeparator
 				[void]$parent.Add($menuItem)
@@ -1069,7 +1073,7 @@ function Compile-Script {
 	$stream = [System.IO.File]::Create($iconPath)
 	$appIcon.Save($stream)
 	$stream.Close()
-	$version = '1.4.0'
+	$version = '1.5.0'
 	Invoke-PS2EXE -InputFile $PSCommandPath -x64 -noConsole -verbose -IconFile $iconPath -Title $appName -Product $appName -Copyright 'https://github.com/mozers3/qLaunch' -Company 'mozers™' -Version $version
 	Remove-Item $iconPath -Force -ErrorAction SilentlyContinue
 	Exit 0
