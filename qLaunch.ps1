@@ -586,7 +586,8 @@ function Create-MenuItems {
 					$menuItem.Font = New-Object System.Drawing.Font($menuItem.Font, [System.Drawing.FontStyle]::Strikeout)
 					$menuItem.ForeColor = [System.Drawing.Color]::Gray
 				}
-				$menuItem.Text = $item.Caption
+				$runAsAdmin = if ($item.RunAsAdmin) {"^ "} else {""}
+				$menuItem.Text = $runAsAdmin + $item.Caption
 				$menuItem.Image = Get-Image -Icon $item.Icon -Tagent $target
 				$menuItem.Tag = $item
 				$menuItem.Add_Click({Menu-MouseClick $this})
@@ -1073,7 +1074,7 @@ function Compile-Script {
 	$stream = [System.IO.File]::Create($iconPath)
 	$appIcon.Save($stream)
 	$stream.Close()
-	$version = '1.5.0'
+	$version = '1.5.1'
 	Invoke-PS2EXE -InputFile $PSCommandPath -x64 -noConsole -verbose -IconFile $iconPath -Title $appName -Product $appName -Copyright 'https://github.com/mozers3/qLaunch' -Company 'mozers™' -Version $version
 	Remove-Item $iconPath -Force -ErrorAction SilentlyContinue
 	Exit 0
