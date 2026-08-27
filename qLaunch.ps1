@@ -939,9 +939,6 @@ function Load-jsonFile {
 	} catch {
 		if ($previousJson.Count -gt 0) {
 			$script:objJSON = $previousJson
-			return $false
-		} else {
-			exit 1
 		}
 	}
 }
@@ -1074,7 +1071,7 @@ function Compile-Script {
 	$stream = [System.IO.File]::Create($iconPath)
 	$appIcon.Save($stream)
 	$stream.Close()
-	$version = '1.5.1'
+	$version = '1.5.2'
 	Invoke-PS2EXE -InputFile $PSCommandPath -x64 -noConsole -verbose -IconFile $iconPath -Title $appName -Product $appName -Copyright 'https://github.com/mozers3/qLaunch' -Company 'mozers™' -Version $version
 	Remove-Item $iconPath -Force -ErrorAction SilentlyContinue
 	Exit 0
